@@ -1,0 +1,11 @@
+
+使用方法:
+cd EasyMock
+mvn clean install -DskipTests
+cd easymock-test
+mvn spring-boot:run
+http://localhost:8080/easymock 
+
+easymock:
+  enabled: true
+  db-path: /opt/data/easymock    # 自定义目录，H2 文件将保存为 /opt/data/easymock.mv.db

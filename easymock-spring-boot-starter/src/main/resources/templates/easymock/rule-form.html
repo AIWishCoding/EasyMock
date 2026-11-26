@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${isEdit} ? '编辑 Mock 规则 - EasyMock' : '新建 Mock 规则 - EasyMock'">Mock 规则</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
+    <link rel="stylesheet" th:href="@{/easymock/css/easymock.css}">
+</head>
+<body>
+<div class="container-fluid">
+    <nav class="navbar navbar-dark bg-dark mb-3 px-3">
+        <a class="navbar-brand" th:href="@{${@environment.getProperty('easymock.page-path', '/easymock')}}">EasyMock 管理控制台</a>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <strong th:text="${isEdit} ? '编辑 Mock 规则' : '新建 Mock 规则'">Mock 规则</strong>
+                </div>
+                <div class="card-body">
+                    <form id="ruleForm">
+                        <input type="hidden" id="ruleId" th:value="${rule.id}">
+
+                        <div class="mb-3">
+                            <label for="ruleName" class="form-label">规则名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ruleName"
+                                   th:value="${rule.name}" required placeholder="例如：创建订单 - 成功场景">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ruleUrl" class="form-label">请求路径 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="ruleUrl"
+                                       th:value="${rule.url}" required
+                                       placeholder="例如：/api/order/create" list="endpointSuggestions">
+                                <datalist id="endpointSuggestions">
+                                    <option th:each="ep : ${endpoints}" th:value="${ep}"></option>
+                                </datalist>
+                            </div>
+                            <div class="form-text">可从下拉列表中选择已扫描到的接口，也可手动输入</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">匹配类型 <span class="text-danger">*</span></label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="matchType"
+                                           id="matchTypeUrl" value="URL"
+                                           th:checked="${rule.matchType == null || rule.matchType.name() == 'URL'}"
+                                           onchange="toggleParamConditions()">
+                                    <label class="form-check-label" for="matchTypeUrl">接口级别（匹配 URL 即返回）</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="matchType"
+                                           id="matchTypeParam" value="PARAMETER"
+                                           th:checked="${rule.matchType != null && rule.matchType.name() == 'PARAMETER'}"
+                                           onchange="toggleParamConditions()">
+                                    <label class="form-check-label" for="matchTypeParam">参数级别（匹配请求参数条件）</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="rulePriority" class="form-label">优先级</label>
+                            <input type="number" class="form-control" id="rulePriority"
+                                   th:value="${rule.priority != null} ? ${rule.priority} : 0"
+                                   placeholder="0（数值越大优先级越高）">
+                            <div class="form-text">同一接口有多条规则时，优先级高的先匹配</div>
+                        </div>
+
+                        <!-- 参数条件组配置区域 -->
+                        <div class="mb-3" id="paramConditionsSection" style="display:none">
+                            <label class="form-label">参数匹配条件组</label>
+                            <div class="form-text mb-2">
+                                每个条件组包含一组参数条件（组内所有条件需同时满足）和独立的 Mock 返回值。匹配时按顺序遍历，第一个满足的条件组决定返回值。<br>
+                                使用 JsonPath 语法指定字段路径，例如 <code>$.orderId</code>、<code>$.data.amount</code>
+                            </div>
+                            <div id="conditionGroupsContainer">
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm mt-2"
+                                    onclick="addConditionGroup()">
+                                + 添加条件组
+                            </button>
+                        </div>
+
+                        <!-- 规则级 Mock 返回值（仅 URL 模式可见） -->
+                        <div class="mb-3" id="urlResponseSection">
+                            <label for="responseBodyEditor" class="form-label">Mock 返回值 (JSON) <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="responseBodyEditor" rows="10"
+                                      th:text="${rule.responseBody}"></textarea>
+                            <div class="invalid-feedback" id="jsonError">JSON 格式不正确</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ruleDescription" class="form-label">规则描述</label>
+                            <textarea class="form-control" id="ruleDescription" rows="2"
+                                      th:text="${rule.description}" placeholder="可选，简要说明该规则的用途"></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a class="btn btn-secondary"
+                               th:href="@{${@environment.getProperty('easymock.page-path', '/easymock')}}">取消</a>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const API_PATH = [[${@environment.getProperty('easymock.api-path', '/easymock/api')}]];
+    const PAGE_PATH = [[${@environment.getProperty('easymock.page-path', '/easymock')}]];
+    const IS_EDIT = [[${isEdit}]];
+    const RULE_ID = [[${rule.id}]];
+    const EXISTING_CONDITIONS = [[${rule.paramConditions}]];
+    const EXISTING_MATCH_TYPE = [[${rule.matchType != null ? rule.matchType.name() : 'URL'}]];
+    const EXISTING_RESPONSE_BODY = [[${rule.responseBody}]];
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/closebrackets.min.js"></script>
+<script th:src="@{/easymock/js/easymock.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        initRuleForm();
+    });
+</script>
+</body>
+</html>
