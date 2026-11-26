@@ -6,12 +6,12 @@
     <title th:text="${isEdit} ? '编辑 Mock 规则 - EasyMock' : '新建 Mock 规则 - EasyMock'">Mock 规则</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
-    <link rel="stylesheet" th:href="@{/easymock/css/easymock.css}">
+    <link rel="stylesheet" th:href="@{${pagePath} + '/css/easymock.css'}">
 </head>
 <body>
 <div class="container-fluid">
     <nav class="navbar navbar-dark bg-dark mb-3 px-3">
-        <a class="navbar-brand" th:href="@{${@environment.getProperty('easymock.page-path', '/easymock')}}">EasyMock 管理控制台</a>
+        <a class="navbar-brand" th:href="@{${pagePath}}">EasyMock 管理控制台</a>
     </nav>
 
     <div class="row justify-content-center">
@@ -27,14 +27,14 @@
                         <div class="mb-3">
                             <label for="ruleName" class="form-label">规则名称 <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="ruleName"
-                                   th:value="${rule.name}" required placeholder="例如：创建订单 - 成功场景">
+                                   th:value="${rule.name}" required maxlength="256" placeholder="例如：创建订单 - 成功场景">
                         </div>
 
                         <div class="mb-3">
                             <label for="ruleUrl" class="form-label">请求路径 <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <input type="text" class="form-control" id="ruleUrl"
-                                       th:value="${rule.url}" required
+                                       th:value="${rule.url}" required maxlength="512"
                                        placeholder="例如：/api/order/create" list="endpointSuggestions">
                                 <datalist id="endpointSuggestions">
                                     <option th:each="ep : ${endpoints}" th:value="${ep}"></option>
@@ -71,6 +71,19 @@
                             <div class="form-text">同一接口有多条规则时，优先级高的先匹配</div>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="ruleResponseStatus" class="form-label">HTTP 状态码</label>
+                            <input type="number" class="form-control" id="ruleResponseStatus"
+                                   th:value="${rule.responseStatus != null} ? ${rule.responseStatus} : 200"
+                                   min="100" max="599" required>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="ruleEnabled"
+                                   th:checked="${rule.enabled == null || rule.enabled}">
+                            <label class="form-check-label" for="ruleEnabled">启用规则</label>
+                        </div>
+
                         <!-- 参数条件组配置区域 -->
                         <div class="mb-3" id="paramConditionsSection" style="display:none">
                             <label class="form-label">参数匹配条件组</label>
@@ -102,7 +115,7 @@
 
                         <div class="d-flex justify-content-between">
                             <a class="btn btn-secondary"
-                               th:href="@{${@environment.getProperty('easymock.page-path', '/easymock')}}">取消</a>
+                               th:href="@{${pagePath}}">取消</a>
                             <button type="submit" class="btn btn-primary">保存</button>
                         </div>
                     </form>
@@ -113,8 +126,8 @@
 </div>
 
 <script th:inline="javascript">
-    const API_PATH = [[${@environment.getProperty('easymock.api-path', '/easymock/api')}]];
-    const PAGE_PATH = [[${@environment.getProperty('easymock.page-path', '/easymock')}]];
+    const API_PATH = [[${apiPath}]];
+    const PAGE_PATH = [[${pagePath}]];
     const IS_EDIT = [[${isEdit}]];
     const RULE_ID = [[${rule.id}]];
     const EXISTING_CONDITIONS = [[${rule.paramConditions}]];
@@ -126,7 +139,7 @@
 <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/javascript/javascript.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/matchbrackets.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/closebrackets.min.js"></script>
-<script th:src="@{/easymock/js/easymock.js}"></script>
+<script th:src="@{${pagePath} + '/js/easymock.js'}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         initRuleForm();

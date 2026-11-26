@@ -64,10 +64,26 @@ function clearFilter() {
     }
 }
 
+function apiFetch(url, options) {
+    return fetch(url, options).then(function(resp) {
+        return resp.text().then(function(text) {
+            var data = null;
+            try {
+                data = text ? JSON.parse(text) : null;
+            } catch (e) {
+                throw new Error('HTTP ' + resp.status);
+            }
+            if (!resp.ok) {
+                throw new Error((data && data.message) || ('HTTP ' + resp.status));
+            }
+            return data;
+        });
+    });
+}
+
 function toggleRule(checkbox) {
     var id = checkbox.getAttribute('data-id');
-    fetch(API_PATH + '/rules/' + id + '/toggle', { method: 'PUT' })
-        .then(function(resp) { return resp.json(); })
+    apiFetch(API_PATH + '/rules/' + id + '/toggle', { method: 'PUT' })
         .then(function(data) {
             checkbox.checked = data.enabled;
         })
@@ -80,11 +96,12 @@ function toggleRule(checkbox) {
 function deleteRule(btn) {
     if (!confirm('确定要删除该规则吗？')) return;
     var id = btn.getAttribute('data-id');
-    fetch(API_PATH + '/rules/' + id, { method: 'DELETE' })
-        .then(function(resp) { return resp.json(); })
+    apiFetch(API_PATH + '/rules/' + id, { method: 'DELETE' })
         .then(function(data) {
             if (data.success) {
                 location.reload();
+            } else {
+                alert('删除规则失败: ' + (data.message || '未知错误'));
             }
         })
         .catch(function(err) {
@@ -101,8 +118,7 @@ function handleImport(input) {
     var formData = new FormData();
     formData.append('file', input.files[0]);
 
-    fetch(API_PATH + '/import', { method: 'POST', body: formData })
-        .then(function(resp) { return resp.json(); })
+    apiFetch(API_PATH + '/import', { method: 'POST', body: formData })
         .then(function(data) {
             if (data.success) {
                 alert('导入成功，共导入 ' + data.count + ' 条规则');
@@ -378,12 +394,16 @@ function saveRule() {
     var name = document.getElementById('ruleName').value.trim();
     var url = document.getElementById('ruleUrl').value.trim();
     var matchType = document.querySelector('input[name="matchType"]:checked').value;
-    var priority = parseInt(document.getElementById('rulePriority').value) || 0;
+    var priority = parseInt(document.getElementById('rulePriority').value);
+    if (isNaN(priority)) priority = 0;
     var description = document.getElementById('ruleDescription').value.trim();
 
-    // 基础校验
     if (!name || !url) {
         alert('请填写规则名称和请求路径');
+        return;
+    }
+    if (!url.startsWith('/')) {
+        alert('请求路径必须以 / 开头');
         return;
     }
 
@@ -447,8 +467,8 @@ function saveRule() {
         matchType: matchType,
         paramConditions: paramConditions,
         responseBody: responseBody,
-        responseStatus: 200,
-        enabled: true,
+        responseStatus: parseInt(document.getElementById('ruleResponseStatus').value),
+        enabled: document.getElementById('ruleEnabled').checked,
         priority: priority,
         description: description || null
     };
@@ -462,14 +482,10 @@ function saveRule() {
         apiUrl = API_PATH + '/rules';
     }
 
-    fetch(apiUrl, {
+    apiFetch(apiUrl, {
         method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-    })
-    .then(function(resp) {
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        return resp.json();
     })
     .then(function(data) {
         window.location.href = PAGE_PATH;

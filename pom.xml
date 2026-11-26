@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.clic</groupId>
+    <groupId>com.aiwishcoding</groupId>
     <artifactId>easymock-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -18,8 +18,8 @@
     </modules>
 
     <properties>
-        <java.version>1.8</java.version>
-        <spring-boot.version>2.7.18</spring-boot.version>
+        <java.version>17</java.version>
+        <spring-boot.version>4.2.0</spring-boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -33,7 +33,7 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>com.clic</groupId>
+                <groupId>com.aiwishcoding</groupId>
                 <artifactId>easymock-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -46,10 +46,10 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.11.0</version>
+                    <version>3.14.1</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
+                        <release>${java.version}</release>
+                        <parameters>true</parameters>
                         <encoding>UTF-8</encoding>
                     </configuration>
                 </plugin>
