@@ -239,4 +239,6 @@ node --test easymock-spring-boot-starter/src/test/js/easymock.test.js
 
 ## License
 
-内部工具，仅供项目组使用。
+本项目基于 [Apache License 2.0](LICENSE) 开源。
+
+Copyright 2026 AIWishCoding
